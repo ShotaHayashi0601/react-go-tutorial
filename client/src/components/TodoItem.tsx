@@ -3,7 +3,7 @@ import { FaCheckCircle } from 'react-icons/fa'
 import { MdDelete } from 'react-icons/md'
 import type { Todo } from './TodoList'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { BASE_URL } from '@/App'
+import { BASE_URL } from '@/config'
 
 const TodoItem = ({ todo }: { todo: Todo }) => {
   const queryClient = useQueryClient()
@@ -34,7 +34,7 @@ const TodoItem = ({ todo }: { todo: Todo }) => {
     mutationFn: async () => {
       if (!todo._id) return alert('Invalid task')
       try {
-        const res = await fetch(BASE_URL + `todos/${todo._id}`, {
+        const res = await fetch(BASE_URL + `/todos/${todo._id}`, {
           method: 'DELETE',
         })
         const data = await res.json()
@@ -46,6 +46,9 @@ const TodoItem = ({ todo }: { todo: Todo }) => {
         alert('Failed to delete task')
         console.error(error)
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos'] })
     },
   })
   return (

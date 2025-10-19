@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	_ "github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -24,9 +24,11 @@ type Todo struct {
 var collection *mongo.Collection
 
 func main() {
-	fmt.Println("Hello, world")
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal("Error loading .env file:", err)
+	if os.Getenv("ENV") != "production" {
+		//Load the .env file if not in production
+		if err := godotenv.Load(".env"); err != nil {
+			log.Fatal("Error loading .env file:", err)
+		}
 	}
 	MONGODB_URI := os.Getenv("MONGODB_URI")
 	clientOptions := options.Client().ApplyURI(MONGODB_URI)
@@ -41,15 +43,22 @@ func main() {
 	fmt.Println("Connected to MongoDB Atlas")
 	collection = client.Database("gorang_db").Collection("todos")
 
-	app := fiber.New()
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:5173",
-		AllowHeaders: "Origin,Content-Type,Accept",
-	}))
+	// app := fiber.New()
+	// app.Use(cors.New(cors.Config{
+	// 	AllowOrigins: "http://localhost:5173",
+	// 	AllowHeaders: "Origin,Content-Type,Accept",
+	// }))
+	app := fiber.New(fiber.Config{
+		ReadBufferSize: 16 * 1024, // まずは16KB。必要なら 64 * 1024 まで
+		// BodyLimit: 5 * 1024 * 1024, // （別件）ボディ上限を明示したい場合
+	})
 	app.Get("/api/todos", getTodos)
 	app.Post("/api/todos", createTodo)
 	app.Patch("/api/todos/:id", updateTodo)
 	app.Delete("/api/todos/:id", deleteTodo)
+	if os.Getenv("ENV") == "production" {
+		app.Static("/", "./client/dist")
+	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
