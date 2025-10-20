@@ -9,7 +9,6 @@ function App() {
       <Navbar />
       <Container>
         <TodoForm />
-
         <TodoList />
       </Container>
     </Stack>
